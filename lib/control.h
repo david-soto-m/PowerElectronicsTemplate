@@ -23,15 +23,7 @@ typedef struct Controler{
 typedef struct ControlResult {
     float res;
     float var;
-}ControlResult;
-
-/*
- * A macro that creates an initialized to zero ControlResult structure in a
- * declarative manner.
- * Use:
- * `ControlResult theta_control`;
- */
-#define ControlResult(X) ControlResult X = {.res = 0, .var = 0}
+} ControlResult;
 
 #define CIRCULAR 0b1
 #define ROOF 0b10

@@ -86,7 +86,16 @@ static void mdlStart(SimStruct *S)
 
 static void mdlOutputs(SimStruct *S, int_T tid) {
 
-    static ThetaResult theta;
+    static ThetaResult theta = {
+        .ang_vel = {
+            .res = 0,
+            .var = 0
+        },
+        .integ = {
+            .res = 0,
+            .var = 0,
+        },
+    };
 
     InputRealPtrsType pV = ssGetInputPortRealSignalPtrs(S,0);
     InputRealPtrsType pI = ssGetInputPortRealSignalPtrs(S,1);

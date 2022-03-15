@@ -33,12 +33,6 @@ typedef struct ThetaResult{
 } ThetaResult;
 
 /*
- * Macro that initializes the theta results with two empty controls
- */
-#define ThetaResult(x) ThetaResult X = {.ang_vel = ControlResult a, .integ = ControlResult b};
-
-
-/*
  * Structure of computed powers
  */
 typedef struct InstantPower{
