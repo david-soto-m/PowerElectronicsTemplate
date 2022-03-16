@@ -6,43 +6,59 @@ const float TR[2][3] = {
 
 const float gain = sqrt(2.0/3.0);
 
-ClarkePark clarke_tr(ClarkePark item){
-    item.alpha = gain * (
-        TR[0][0] * item.a
-        + TR[0][1] * item.b
-        + TR[0][2] * item.c);
-    item.beta = gain * (
-        TR[1][0] * item.a
-        + TR[1][1] * item.b
-        + TR[1][2] * item.c);
-    return item;
+Clarke clarke_tr(Normal item){
+  Clarke a = {
+        .alpha = gain * (
+            TR[0][0] * item.a
+            + TR[0][1] * item.b
+            + TR[0][2] * item.c),
+        .beta = gain * (
+            TR[1][0] * item.a
+            + TR[1][1] * item.b
+            + TR[1][2] * item.c)
+    };
+    return a;
 }
 
-ClarkePark park_tr(ClarkePark item, float theta) {
-    item = clarke_tr(item);
-    item.d = cos(theta) * item.alpha + sin(theta) * item.beta;
-    item.q = -sin(theta) * item.alpha + cos(theta) * item.beta;
-    return item;
+Park park_tr(Normal item, float theta) {
+    Clarke cl = clarke_tr(item);
+    return clarke_to_park(cl, theta);
+}
+Park clarke_to_park(Clarke cl,float theta){
+    Park a = {
+        .d = cos(theta) * cl.alpha + sin(theta) * cl.beta,
+        .q = -sin(theta) * cl.alpha + cos(theta) * cl.beta,
+    };
+    return a;
 }
 
-ClarkePark clarke_inv_tr(ClarkePark item) {
-    item.a = gain * (
+Normal clarke_inv_tr(Clarke item) {
+    Normal a = {
+        .a = gain * (
         item.alpha * TR[0][0]
-        + item.beta * TR[1][0]);
-    item.b = gain * (
-        item.alpha * TR[0][1]
-        + item.beta * TR[1][1]);
-    item.c = gain * (
-        item.alpha * TR[0][2]
-        + item.beta * TR[1][2]);
-    return item;
+        + item.beta * TR[1][0]),
+        .b = gain * (
+            item.alpha * TR[0][1]
+            + item.beta * TR[1][1]),
+        .c = gain * (
+            item.alpha * TR[0][2]
+            + item.beta * TR[1][2]),
+    };
+    return a;
+}
+
+Clarke clarke_from_Park(Park item, float theta) {
+    Clarke a = {
+        .alpha = cos(theta) * item.d - sin(theta) * item.q,
+        .beta  = sin(theta) * item.d + cos(theta) * item.q,
+    };
+    return a;
 }
 
 
-ClarkePark park_inv_tr(ClarkePark item, float theta) {
-    item.alpha = cos(theta) * item.d - sin(theta) * item.q;
-    item.beta  = sin(theta) * item.d + cos(theta) * item.q;
-    return clarke_inv_tr(item);
+Normal park_inv_tr(Park item, float theta) {
+    Clarke cl = clarke_from_Park(item, theta);
+    return clarke_inv_tr(cl);
 }
 
 ThetaResult new_ThetaResult() {
@@ -53,10 +69,16 @@ ThetaResult new_ThetaResult() {
     return a;
 }
 
-ControlResult a;
+float th_ang(ThetaResult theta) {
+    return actuation(theta.integ);
+}
+
+float th_vel(ThetaResult theta) {
+    return actuation(theta.ang_vel);
+}
 
 
-ThetaResult theta_ctrl(ClarkePark V, const Controler C, ThetaResult past){
+ThetaResult theta_ctrl(Park V, const Controler C, ThetaResult past){
     past.ang_vel = pi_simple(V.q, C, past.ang_vel);
 
     const float PI = 3.141592;
@@ -70,7 +92,7 @@ ThetaResult theta_ctrl(ClarkePark V, const Controler C, ThetaResult past){
     return past;
 }
 
-InstantPower clarke_power(ClarkePark V, ClarkePark I){
+InstantPower clarke_power(Clarke V, Clarke I){
     InstantPower a = {
         .P = V.alpha*I.alpha + V.beta*I.beta,
         .Q = -V.alpha*I.beta + V.beta*I.alpha
@@ -78,7 +100,7 @@ InstantPower clarke_power(ClarkePark V, ClarkePark I){
     return a;
 }
 
-InstantPower park_power(ClarkePark V, ClarkePark I){
+InstantPower park_power(Park V, Park I){
     InstantPower a = {
         .P = V.d*I.d+ V.q*I.q,
         .Q = -V.d*I.q+V.q*I.d,

@@ -40,3 +40,7 @@ ControlResult new_ControlResult(){
     ControlResult a = {.res = 0, .var=0};
     return a;
 }
+
+float actuation(ControlResult a){
+    return a.res;
+}

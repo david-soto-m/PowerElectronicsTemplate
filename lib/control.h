@@ -47,5 +47,11 @@ ControlResult integ(float var, const Controler I, ControlResult past);
  * Instantiates a new control result for a new controller
  */
 ControlResult new_ControlResult();
+
+/*
+ *
+ */
+float actuation(ControlResult a);
+
 // END Methods
 #endif  // CONTROL_H
