@@ -34,7 +34,7 @@ typedef struct ControlResult {
 // BEGIN Methods
 
 /*
- * A SISO PI controller starting on cero with saturations.
+ * A SISO PI controller starting on zero with saturations.
  */
 ControlResult pi_simple(float var, const Controler c, ControlResult past);
 
@@ -54,4 +54,86 @@ ControlResult new_ControlResult();
 float actuation(ControlResult a);
 
 // END Methods
+
+
+template <class T, class U>
+
+/*
+ * An abstract controller class to create a unified interface.
+ *
+ * This is thinking in terms of rust traits. It is abstract enough that anything
+ * on the spirit of classic control strategies should be able to use it.
+ */
+class SimpleController{
+public:
+    /*
+     * The control strategy
+     */
+    virtual U actuation(T var) = 0;
+    /*
+     * Passive read of the actuation value.
+     */
+    virtual U read() = 0;
+};
+
+
+/*
+ * The ways in which things can possibly saturate
+ */
+enum class SaturationType { circular, roof, none };
+
+struct SatParam{
+    SaturationType type;
+    float max;
+    float min;
+    SatParam() {
+        type = SaturationType::none;
+        max = 0;
+        min = 0;
+    };
+};
+
+/*
+ * A SISO PI controller with saturation
+ */
+class PIController: SimpleController<double, double>{
+protected:
+    double Kp;
+    double Ki;
+    double T_samp;
+    SatParam sat;
+    double res;
+    double var;
+    void saturate();
+
+public:
+    /*
+     * Initialize with specified saturation
+     */
+    PIController(double Kp,
+                 double Ki,
+                 double T_samp,
+                 SatParam sat
+                 );
+    /*
+     * With no saturation
+     */
+    PIController(double Kp,
+                 double Ki,
+                 double T_samp);
+    /*
+     * The actual PI controller
+     */
+    PIController();
+    double actuation(double var);
+    double read();
+};
+
+class Integrator: PIController{
+public:
+    Integrator(double T_samp, SatParam sat);
+    double actuation(double var);
+};
+
+
 #endif  // CONTROL_H
