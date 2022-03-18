@@ -1,4 +1,4 @@
-#define S_FUNCTION_NAME  control
+#define S_FUNCTION_NAME  controler
 #define S_FUNCTION_LEVEL 2
 
 #define Tsampling 100e-6
