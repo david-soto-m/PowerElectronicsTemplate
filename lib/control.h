@@ -4,44 +4,51 @@
 // BEGIN types
 
 /*
+ * Ways in which a controller can saturate
+ */
+typedef enum SaturationTypes{
+    roof,
+    circular,
+    none,
+}SaturationTypes;
+
+
+/*
+ * All the info to saturate
+ */
+typedef struct Saturator{
+    SaturationTypes sat;
+    float max;
+    float min;
+}Saturator;
+
+/*
  * Parameters for a PI controller
  */
-typedef struct Controler{
+typedef struct Controller{
     float Kp;
     float Ki;
     float T_samp;
-    char sat;
-    float max;
-    float min;
-
-} Controler;
-
-/*
- * A structure that holds the old control values that are to be remembered in
- * the next iteration. ***DO NOT MESS WITH IT***
- */
-typedef struct ControlResult {
+    Saturator sat;
     float res;
     float var;
 } ControlResult;
 
-#define CIRCULAR 0b1
-#define ROOF 0b10
-#define NONE 0b0
+
 
 // END types
 
 // BEGIN Methods
 
 /*
- * A SISO PI controller starting on cero with saturations.
+ * A SISO PI controller starting on zero with saturations.
  */
-ControlResult pi_simple(float var, const Controler c, ControlResult past);
+ControlResult pi_simple(float var, Controller c);
 
 /*
  * An integrator with saturations
  */
-ControlResult integ(float var, const Controler I, ControlResult past);
+ControlResult integ(float var, Controller I);
 
 /*
  * Instantiates a new control result for a new controller
