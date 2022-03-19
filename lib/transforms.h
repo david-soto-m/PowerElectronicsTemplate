@@ -3,115 +3,92 @@
 #include <math.h>
 #include "control.h"
 
-
 // BEGIN Types
-
+/*
+ * Structure of computed powers
+ */
+struct InstantPower{
+    double P;
+    double Q;
+    InstantPower operator+(const InstantPower &a);
+    InstantPower operator-(const InstantPower &a);
+};
 
 /*
  * Represents a direct electric measurement
  */
-typedef struct Normal {
-    float a;
-    float b;
-    float c;
-} Normal;
+class Normal {
+public:
+    double a;
+    double b;
+    double c;
+    Normal(double a, double b, double c);
+    Normal operator+(const Normal &a);
+    Normal operator-(const Normal &a);
+};
 
 /*
  * Represents a measurement in the Clarke space
  */
-typedef struct Clarke {
-    float alpha;
-    float beta;
-} Clarke;
+class Clarke {
+public:
+    double alpha;
+    double beta;
+    Clarke(Normal n);
+    Clarke(double alpha, double beta);
+    Normal to_normal();
+    InstantPower operator*(const Clarke &a);
+    Clarke operator+(const Clarke &a);
+    Clarke operator-(const Clarke &a);
+};
 
 /*
  * Represents a measurement in the Park space
  */
-typedef struct Park {
-    float d;
-    float q;
-} Park;
+class Park{
+public:
+    double d;
+    double q;
+    Park(Normal n, double theta);
+    Park(Clarke c, double theta);
+    Park(double d, double q);
+    Clarke to_clarke(double theta);
+    Normal to_normal(double theta);
+    InstantPower operator*(const Park &a);
+    Park operator+(const Park &a);
+    Park operator-(const Park &a);
+};
 
 
 /*
- * Special controller for two controls at a time, one the PLL and the other an
- * integrator.
+ * A controller for Park variables
  */
-typedef struct ThetaResult{
-    ControlResult ang_vel;
-    ControlResult integ;
-} ThetaResult;
+class ParkController : public DualController<Park, Park> {
+public:
+    Park actuation(Park obj);
+    ParkController(float Kp, float Ki, float T_samp){
+        this->upper = PIController(Kp, Ki, T_samp);
+        this->lower = PIController(Kp, Ki, T_samp);
+    }
+    ParkController(float Kp, float Ki,float Kp_2, float Ki_2, float T_samp){
+        this->upper = PIController(Kp, Ki, T_samp);
+        this->lower = PIController(Kp_2, Ki_2, T_samp);
+    }
+};
+
 
 /*
- * Structure of computed powers
+ * A controller for the theta variable with the integrator already included
  */
-typedef struct InstantPower{
-    float P;
-    float Q;
-} InstantPower;
+class ThetaController:SimpleController<double, Park>{
+private:
+    PIController ang_vel;
+    Integrator theta;
+public:
+    ThetaController(float Kp, float Ki, float T_samp);
+    double read();
+    double read_vel();
+    double actuation(Park V);
+};
 
-// END Types
-
-// BEGIN Methods
-
-/*
- * Create an empty ThetaResult;
- */
-ThetaResult new_ThetaResult();
-
-/*
- * get angle from ThetaResult Structure
- */
-float th_ang(ThetaResult theta);
-
-/*
- * get the angular velocity form the ThetaResult Structure
- */
-float th_vel(ThetaResult theta);
-
-/*
- * Return the clarke transform
- */
-Clarke clarke_tr(Normal item);
-
-/*
- * Return a Park space item form a clarke
- */
-Park clarke_to_park(Clarke item, float theta);
-
-/*
- * Return a Park item
- */
-Park park_tr(Normal item, float theta);
-
-/*
- * return an inverted clarke transform
- */
-Normal clarke_inv_tr(Clarke item);
-
-Clarke clarke_from_Park(Park item, float theta);
-/*
- * return an inverted from park transform, includes clarke transform
- */
-Normal park_inv_tr(Park item, float theta);
-
-/*
- * PLL and integrator blocks in one function that uses the special ControlResult
- * ThetaResult.
- * Theta is accessible at var.integ.res
- */
-ThetaResult theta_ctrl(Park V, const Controler c, ThetaResult past);
-
-/*
- * Calculate the power from clarke transform
- */
-InstantPower clarke_power(Clarke V, Clarke I);
-
-/*
- * Calculate the power from the park transform
- */
-InstantPower park_power(Park V, Park I);
-
-//END Methods
-#endif  // TRANSFORMS_H
-
+#endif // TRANSFORMS_H

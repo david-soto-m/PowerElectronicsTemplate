@@ -1,61 +1,6 @@
 #ifndef CONTROL_H
 #define CONTROL_H
 
-// BEGIN types
-
-/*
- * Parameters for a PI controller
- */
-typedef struct Controler{
-    float Kp;
-    float Ki;
-    float T_samp;
-    char sat;
-    float max;
-    float min;
-
-} Controler;
-
-/*
- * A structure that holds the old control values that are to be remembered in
- * the next iteration. ***DO NOT MESS WITH IT***
- */
-typedef struct ControlResult {
-    float res;
-    float var;
-} ControlResult;
-
-#define CIRCULAR 0b1
-#define ROOF 0b10
-#define NONE 0b0
-
-// END types
-
-// BEGIN Methods
-
-/*
- * A SISO PI controller starting on zero with saturations.
- */
-ControlResult pi_simple(float var, const Controler c, ControlResult past);
-
-/*
- * An integrator with saturations
- */
-ControlResult integ(float var, const Controler I, ControlResult past);
-
-/*
- * Instantiates a new control result for a new controller
- */
-ControlResult new_ControlResult();
-
-/*
- *
- */
-float actuation(ControlResult a);
-
-// END Methods
-
-
 template <class T, class U>
 
 /*
@@ -69,11 +14,11 @@ public:
     /*
      * The control strategy
      */
-    virtual U actuation(T var) = 0;
+    virtual T actuation(U var) = 0;
     /*
      * Passive read of the actuation value.
      */
-    virtual U read() = 0;
+    virtual T read() = 0;
 };
 
 
@@ -91,12 +36,17 @@ struct SatParam{
         max = 0;
         min = 0;
     };
+    SatParam(SaturationType sat, double max, double min){
+        type = sat;
+        this->max = max;
+        this->min = min;
+    };
 };
 
 /*
  * A SISO PI controller with saturation
  */
-class PIController: SimpleController<double, double>{
+class PIController: public SimpleController<double, double>{
 protected:
     double Kp;
     double Ki;
@@ -128,12 +78,28 @@ public:
     double actuation(double var);
     double read();
 };
-
-class Integrator: PIController{
+/*
+ * An integrator
+ */
+class Integrator: public PIController{
 public:
+    Integrator();
     Integrator(double T_samp, SatParam sat);
     double actuation(double var);
 };
 
+
+/*
+ * It is frequent that you want to control two variables at the same time that
+ * belong to the same object. (When controlling in the park or clarke domains)
+ */
+template <class T, class U>
+class DualController : public SimpleController<T, U> {
+public:
+    PIController upper;
+    PIController lower;
+    virtual T actuation(U obj) = 0;
+    T read() { return T(this->upper.read(), this->lower.read()); }
+};
 
 #endif  // CONTROL_H
