@@ -2,7 +2,6 @@
 #define S_FUNCTION_LEVEL 2
 
 #define Tsampling 100e-6
-#include <iostream>
 
 // #include "simstruc.h"
 #include "/home/david/.local/MATLAB/R2021b/simulink/include/simstruc.h"
@@ -48,23 +47,19 @@ static void mdlStart(SimStruct *S){}
 #endif /*  MDL_START */
 
 static void mdlOutputs(SimStruct *S, int_T tid) {
-
-    static ThetaController theta_ctrl = ThetaController(20,15000,Tsampling);
-
-
-    InputRealPtrsType pV = ssGetInputPortRealSignalPtrs(S,0);
-    InputRealPtrsType pI = ssGetInputPortRealSignalPtrs(S,1);
+    InputRealPtrsType pV = ssGetInputPortRealSignalPtrs(S, 0);
+    InputRealPtrsType pI = ssGetInputPortRealSignalPtrs(S, 1);
     InputRealPtrsType pdc = ssGetInputPortRealSignalPtrs(S, 2);
-    real_T            *y1    = ssGetOutputPortRealSignal(S,0);
-    real_T            *y2    = ssGetOutputPortRealSignal(S,1);
-    real_T            *y3    = ssGetOutputPortRealSignal(S,2);
+    real_T *y1 = ssGetOutputPortRealSignal(S, 0);
+    real_T *y2 = ssGetOutputPortRealSignal(S, 1);
+    real_T *y3 = ssGetOutputPortRealSignal(S, 2);
     double V_dc = *pdc[0];
 
-
+    static ThetaController theta_ctrl = ThetaController(20, 15000, Tsampling);
     Park V = Park(Normal(*pV[0], *pV[1], *pV[2]), theta_ctrl.read());
     Park I = Park(Normal(*pI[0], *pI[1], *pI[2]), theta_ctrl.read());
 
-    //BEGIN Outerloop
+    // BEGIN Outerloop
     const float V_dc_ref = 750;
     const float mag_ref = V_dc_ref * V_dc_ref / 2.0;
     float mag, mag_hat;
@@ -78,34 +73,23 @@ static void mdlOutputs(SimStruct *S, int_T tid) {
     };
     // END Outerloop
 
-    //BEGIN Innerloop
+    // BEGIN Innerloop
     static ParkController inner_controller = ParkController(10, 400, Tsampling);
-
-    float L = 0.005;
+    const float L = 0.005;
     float gain = 1.0/(V.d * V.d + V.q * V.q);
-    Park i_ref = Park(
-        gain * (V.d * pow_ref.P + V.q * pow_ref.Q),
-        gain * (V.q * pow_ref.P - V.d * pow_ref.Q)
-    );
-
+    Park i_ref = Park(gain * (V.d * pow_ref.P + V.q * pow_ref.Q),
+                      gain * (V.q * pow_ref.P - V.d * pow_ref.Q));
     Park i_hat = I - i_ref;
-
     Park inner_res = inner_controller.actuation(i_hat);
-
     Park comp = Park(theta_ctrl.read_vel() * L * I.d,
                      theta_ctrl.read_vel() * L * I.q);
-
     Park u_hat = Park(inner_res.d + comp.d,
                       inner_res.q - comp.q);
-
     Park U_p = u_hat + V;
-
-    //END Innerloop
+    // END Innerloop
 
     Normal i = I.to_normal(theta_ctrl.read());
-
     Normal U = U_p.to_normal(theta_ctrl.read());
-
     InstantPower power = V*I;
     theta_ctrl.actuation(V);
 

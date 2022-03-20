@@ -15,12 +15,9 @@ static void mdlInitializeSizes(SimStruct *S)
 {
     ssSetNumSFcnParams(S, 0);
     if (ssGetNumSFcnParams(S) != ssGetSFcnParamsCount(S)) {
-        return; /* Parameter mismatch will be reported by Simulink */
+        return;
     }
-
     if (!ssSetNumInputPorts(S, 3)) return;// # puertos entrada
-    //ssSetInputPortWidth(S, 0, DYNAMICALLY_SIZED);
-    //↓ una por entrada s, salida, dimensión
     ssSetInputPortWidth(S, 0, 3);
     ssSetInputPortDirectFeedThrough(S, 0, 1);
     ssSetInputPortWidth(S, 1, 3);
@@ -29,13 +26,11 @@ static void mdlInitializeSizes(SimStruct *S)
     ssSetInputPortDirectFeedThrough(S, 2, 1);
 
     if (!ssSetNumOutputPorts(S,3)) return;
-    //ssSetOutputPortWidth(S, 0, DYNAMICALLY_SIZED);
     ssSetOutputPortWidth(S, 0, 3);
     ssSetOutputPortWidth(S, 1, 3);
     ssSetOutputPortWidth(S, 2, 2);
 
     ssSetNumSampleTimes(S, 1);
-
     ssSetSimStateCompliance(S, USE_DEFAULT_SIM_STATE);
     ssSetOptions(S,
                  SS_OPTION_WORKS_WITH_CODE_REUSE |
@@ -45,8 +40,6 @@ static void mdlInitializeSizes(SimStruct *S)
 
 static void mdlInitializeSampleTimes(SimStruct *S)
 {
-    //ssSetSampleTime(S, 0, INHERITED_SAMPLE_TIME);
-    // Tasa de muestreo ↓
     ssSetSampleTime(S, 0, Tsampling);
     ssSetOffsetTime(S, 0, 0.0);
     ssSetModelReferenceSampleTimeDefaultInheritance(S);
@@ -62,31 +55,21 @@ static void mdlStart(SimStruct *S) {
 #endif /*  MDL_START */
 
 static void mdlOutputs(SimStruct *S, int_T tid) {
-    InputRealPtrsType pV = ssGetInputPortRealSignalPtrs(S,0);
+    InputRealPtrsType pV = ssGetInputPortRealSignalPtrs(S, 0);
     InputRealPtrsType pI = ssGetInputPortRealSignalPtrs(S, 1);
-    InputRealPtrsType pdc = ssGetInputPortRealSignalPtrs(S,2);
-    real_T *y1 = ssGetOutputPortRealSignal(S,0);
+    InputRealPtrsType pdc = ssGetInputPortRealSignalPtrs(S, 2);
+    real_T *y1 = ssGetOutputPortRealSignal(S, 0);
     real_T *y2 = ssGetOutputPortRealSignal(S, 1);
     real_T *y3 = ssGetOutputPortRealSignal(S, 2);
-
-    Normal V_n = {
-        .a = *pV[0],
-        .b = *pV[1],
-        .c = *pV[2],
-    };
-    Normal I_n = {
-        .a = *pI[0],
-        .b = *pI[1],
-        .c = *pI[2],
-    };
     float V_dc = *pdc[0];
 
+    Normal V_n = {.a = *pV[0], .b = *pV[1], .c = *pV[2]};
+    Normal I_n = {.a = *pI[0], .b = *pI[1], .c = *pI[2]};
     Park V = park_tr(V_n, th_ang(theta));
     Park I = park_tr(I_n, th_ang(theta));
-
     InstantPower power = park_power(V, I);
 
-    //BEGIN Outerloop
+    // BEGIN Outerloop
     const float V_dc_ref = 750;
     const float mag_ref = V_dc_ref * V_dc_ref / 2.0;
     float mag, mag_hat;
@@ -98,39 +81,27 @@ static void mdlOutputs(SimStruct *S, int_T tid) {
         .P = p_ref,
         .Q = 5000
     };
-    //END
+    // END Outerloop
 
     // BEGIN Innerloop
 
     const float L = 0.005;
     float gain = 1.0/(V.d * V.d + V.q * V.q);
-    Park i_ref = {
-        .d = gain * (V.d * pow_ref.P + V.q * pow_ref.Q),
-        .q = gain * (V.q * pow_ref.P - V.d * pow_ref.Q),
-    };
-    Park i_hat = {
-        .d = I.d - i_ref.d,
-        .q = I.q - i_ref.q,
-    };
+    Park i_ref = {.d = gain * (V.d * pow_ref.P + V.q * pow_ref.Q),
+                  .q = gain * (V.q * pow_ref.P - V.d * pow_ref.Q)};
+    Park i_hat = {.d = I.d - i_ref.d,
+                  .q = I.q - i_ref.q};
     Park inner_res = actuate_Park(&inner, i_hat);
-
-    Park comp = {
-        .q = theta.ang_vel.res * L * I.d,
-        .d = theta.ang_vel.res * L * I.q,
-    };
-    Park u_hat = {
-        .d = inner_res.d + comp.d,
-        .q = inner_res.q - comp.q,
-    };
-    Park U_p = {
-      .d = u_hat.d + V.d,
-      .q = u_hat.q + V.q
-    };
-    //END Innerloop
+    Park comp = {.q = theta.ang_vel.res * L * I.d,
+                 .d = theta.ang_vel.res * L * I.q};
+    Park u_hat = {.d = inner_res.d + comp.d,
+                  .q = inner_res.q - comp.q};
+    Park U_p = {.d = u_hat.d + V.d,
+                .q = u_hat.q + V.q};
+    // END Innerloop
 
     Normal U = park_inv_tr(U_p, th_ang(theta));
     Normal i = park_inv_tr(I, th_ang(theta));
-
     theta_ctrl(&theta, V);
 
     y1[0] = U.a;
