@@ -32,16 +32,6 @@ typedef struct Park {
     float q;
 } Park;
 
-
-/*
- * Special controller for two controls at a time, one the PLL and the other an
- * integrator.
- */
-typedef struct ThetaResult{
-    ControlResult ang_vel;
-    ControlResult integ;
-} ThetaResult;
-
 /*
  * Structure of computed powers
  */
@@ -53,21 +43,6 @@ typedef struct InstantPower{
 // END Types
 
 // BEGIN Methods
-
-/*
- * Create an empty ThetaResult;
- */
-ThetaResult new_ThetaResult();
-
-/*
- * get angle from ThetaResult Structure
- */
-float th_ang(ThetaResult theta);
-
-/*
- * get the angular velocity form the ThetaResult Structure
- */
-float th_vel(ThetaResult theta);
 
 /*
  * Return the clarke transform
@@ -96,13 +71,6 @@ Clarke clarke_from_Park(Park item, float theta);
 Normal park_inv_tr(Park item, float theta);
 
 /*
- * PLL and integrator blocks in one function that uses the special ControlResult
- * ThetaResult.
- * Theta is accessible at var.integ.res
- */
-ThetaResult theta_ctrl(Park V, const Controler c, ThetaResult past);
-
-/*
  * Calculate the power from clarke transform
  */
 InstantPower clarke_power(Clarke V, Clarke I);
@@ -111,7 +79,57 @@ InstantPower clarke_power(Clarke V, Clarke I);
  * Calculate the power from the park transform
  */
 InstantPower park_power(Park V, Park I);
+// END Methods
 
-//END Methods
+// BEGIN ThetaController
+
+/*
+ * Special controller for two controls at a time, one the PLL and the other an
+ * integrator.
+ */
+typedef struct ThetaController{
+    Controller ang_vel;
+    Controller integ;
+} ThetaController;
+
+/*
+ * PLL and integrator blocks in one function
+ */
+float theta_ctrl(ThetaController *ctrl, Park V);
+
+/*
+ * Create an empty ThetaResult;
+ */
+ThetaController new_ThetaController(float Kp, float Ki, float T_samp);
+
+/*
+ * get angle from ThetaResult Structure
+ */
+float th_ang(ThetaController theta);
+
+/*
+ * get the angular velocity form the ThetaResult Structure
+ */
+float th_vel(ThetaController theta);
+
+
+// END ThetaController
+
+
+// BEGIN ParkController
+
+typedef struct ParkController{
+    Controller d;
+    Controller q;
+}  ParkController;
+
+ParkController new_ParkController(float Kp, float Ki, float T_samp);
+
+Park actuate_Park(ParkController *A, Park V);
+
+Park read_Park(ParkController A);
+
+// END Controller
+
 #endif  // TRANSFORMS_H
 

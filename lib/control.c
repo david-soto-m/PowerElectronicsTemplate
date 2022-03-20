@@ -1,46 +1,70 @@
 #include "control.h"
 
-ControlResult saturate(const Controler I, ControlResult past){
-    switch (I.sat){
-        case CIRCULAR:
-            if(past.res > I.max){
-                past.res = I.min;
-            }else if(past.res < I.min){
-                past.res = I.max;
+void saturate(Controller *I){
+    switch (I->sat.sat){
+        case circular:
+            if(I->res > I->sat.max){
+                I->res = I->sat.min;
+            }else if(I->res < I->sat.min){
+                I->res = I->sat.max;
             }
             break;
-        case ROOF:
-            if(past.res > I.max){
-                past.res = I.max;
-            }else if(past.res < I.min){
-                past.res = I.min;
+        case roof:
+            if(I->res > I->sat.max){
+                I->res = I->sat.max;
+            }else if(I->res < I->sat.min){
+                I->res = I->sat.min;
             }
             break;
         default:
             break;
     }
-    return past;
 }
 
 
-ControlResult pi_simple(float var, const Controler C, ControlResult past) {
-    past.res += C.Kp * var + (C.Ki * C.T_samp - C.Kp) * past.var;
-    past.var = var;
-    return saturate(C, past);
+float pi_simple(Controller *C, float var) {
+    C->res += C->Kp * var + (C->Ki * C->T_samp - C->Kp) * C->var;
+    C->var = var;
+    saturate(C);
+    return C->res;
 }
 
 
-ControlResult integ(float var, const Controler I, ControlResult past) {
-    past.res += var * I.T_samp;
-    return saturate(I, past);
+float integ(Controller *I, float var) {
+    I->res += var * I->T_samp;
+    saturate(I);
+    return I->res;
+}
+
+float read(Controller a) { return a.res; }
+
+Controller new_Controller(float Kp, float Ki, float T_samp) {
+      Controller a = {
+        .Kp = Kp,
+        .Ki = Ki,
+        .T_samp = T_samp,
+        .res = 0,
+        .var = 0,
+        .sat = {
+            .sat = none,
+            .max = 0,
+            .min = 0
+        }
+    };
+    return a ;
 }
 
 
-ControlResult new_ControlResult(){
-    ControlResult a = {.res = 0, .var=0};
-    return a;
-}
-
-float actuation(ControlResult a){
-    return a.res;
-}
+Controller new_Controller_w_sat(float Kp,
+                                float Ki,
+                                float T_samp,
+                                Saturator sat) {
+    Controller a = {
+        .Kp = Kp,
+        .Ki = Ki,
+        .T_samp = T_samp,
+        .res = 0,
+        .var = 0,
+        .sat = sat
+    };
+    return a;}

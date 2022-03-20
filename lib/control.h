@@ -32,33 +32,37 @@ typedef struct Controller{
     Saturator sat;
     float res;
     float var;
-} ControlResult;
-
-
+} Controller;
 
 // END types
 
 // BEGIN Methods
 
 /*
- * A SISO PI controller starting on zero with saturations.
+ * A SISO PI controller
  */
-ControlResult pi_simple(float var, Controller c);
+float pi_simple(Controller *c, float var);
 
 /*
  * An integrator with saturations
  */
-ControlResult integ(float var, Controller I);
+float integ(Controller *I, float var);
 
 /*
- * Instantiates a new control result for a new controller
+ * Creates a new controller
  */
-ControlResult new_ControlResult();
+Controller new_Controller(float Kp, float Ki, float T_samp);
 
 /*
- *
+ * Creates a new controller with saturations
  */
-float actuation(ControlResult a);
+Controller new_Controller_w_sat(float Kp, float Ki, float T_samp, Saturator sat);
+
+/*
+ * Get the value of a controller
+ */
+float read(Controller a);
+
 
 // END Methods
 #endif  // CONTROL_H

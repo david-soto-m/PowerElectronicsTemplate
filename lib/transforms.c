@@ -61,37 +61,6 @@ Normal park_inv_tr(Park item, float theta) {
     return clarke_inv_tr(cl);
 }
 
-ThetaResult new_ThetaResult() {
-  ThetaResult a = {
-        .ang_vel = new_ControlResult(),
-        .integ = new_ControlResult()
-    };
-    return a;
-}
-
-float th_ang(ThetaResult theta) {
-    return actuation(theta.integ);
-}
-
-float th_vel(ThetaResult theta) {
-    return actuation(theta.ang_vel);
-}
-
-
-ThetaResult theta_ctrl(Park V, const Controler C, ThetaResult past){
-    past.ang_vel = pi_simple(V.q, C, past.ang_vel);
-
-    const float PI = 3.141592;
-    const Controler it = {
-        .T_samp = C.T_samp,
-        .sat = NONE,
-        .max = PI,
-        .min = -PI
-    };
-    past.integ = integ(past.ang_vel.res, it, past.integ);
-    return past;
-}
-
 InstantPower clarke_power(Clarke V, Clarke I){
     InstantPower a = {
         .P = V.alpha*I.alpha + V.beta*I.beta,
@@ -104,6 +73,61 @@ InstantPower park_power(Park V, Park I){
     InstantPower a = {
         .P = V.d*I.d+ V.q*I.q,
         .Q = -V.d*I.q+V.q*I.d,
+    };
+    return a;
+}
+
+
+
+ThetaController new_ThetaController(float Kp, float Ki, float T_samp) {
+    const float PI = 3.141592;
+    Saturator sat = {
+        .sat = none,
+        .max = PI,
+        .min = -PI
+    };
+    ThetaController a = {
+        .ang_vel = new_Controller(Kp,Ki,T_samp),
+        .integ = new_Controller_w_sat(0, 0, T_samp, sat)
+    };
+    return a;
+}
+
+float th_ang(ThetaController theta) {
+    return read(theta.integ);
+}
+
+float th_vel(ThetaController theta) {
+    return read(theta.ang_vel);
+}
+
+
+float theta_ctrl(ThetaController *ctrl, Park V){
+    float ang_vel = pi_simple(&ctrl->ang_vel, V.q);
+    float ang = integ(&ctrl->integ, ang_vel);
+    return ang;
+}
+
+ParkController new_ParkController(float Kp, float Ki, float T_samp){
+    ParkController a = {
+        .d = new_Controller(Kp, Ki, T_samp),
+        .q = new_Controller(Kp, Ki, T_samp),
+    };
+    return a;
+}
+
+Park actuate_Park(ParkController *A, Park V) {
+    Park a = {
+        .d = pi_simple(&A->d, V.d),
+        .q = pi_simple(&A->q, V.q),
+    };
+    return a;
+}
+
+Park read_Park(ParkController A){
+    Park a ={
+        .d =read(A.d),
+        .q =read(A.q),
     };
     return a;
 }
