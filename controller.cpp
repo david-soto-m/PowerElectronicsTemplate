@@ -6,7 +6,7 @@
 
 // #include "simstruc.h"
 #include "/home/david/.local/MATLAB/R2021b/simulink/include/simstruc.h"
-#include "lib/transforms.h"
+#include "lib++/transforms.h"
 
 static void mdlInitializeSizes(SimStruct *S)
 {
