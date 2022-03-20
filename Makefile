@@ -6,3 +6,6 @@ no++:
 
 noc:
 	rm lib controller.c
+
+unproj:
+	rm .git README.md .gitignore
