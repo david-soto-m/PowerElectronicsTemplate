@@ -1,11 +1,11 @@
-clean:
-	rm *.mexa64 *.slxc *.asv slprj/*
+cclean:
+	rm -r slprj *.mexa64 *.slxc *.asv
 
 no++:
-	rm lib++ controller.cpp
+	rm -r lib++ controller.cpp
 
 noc:
-	rm lib controller.c
+	rm -r lib controller.c
 
 unproj:
-	rm .git README.md .gitignore
+	rm -rf .git README.md .gitignore LICENSE
