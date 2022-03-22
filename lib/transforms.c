@@ -82,9 +82,9 @@ InstantPower park_power(Park V, Park I){
 ThetaController new_ThetaController(float Kp, float Ki, float T_samp) {
     const float PI = 3.141592;
     Saturator sat = {
-        .sat = none,
-        .max = PI,
-        .min = -PI
+        .sat = circular,
+        .max = 2 * PI,
+        .min = 0
     };
     ThetaController a = {
         .ang_vel = new_Controller(Kp,Ki,T_samp),

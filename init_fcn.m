@@ -8,7 +8,7 @@
 % frustration of not being able to overload the sum operators in C.
 
 mex controller.cpp lib++/transforms.cpp lib++/control.cpp;
-%mex controller.c lib/transforms.c lib/control.c;
+% mex controller.c lib/transforms.c lib/control.c;
 
 
 %% Constants

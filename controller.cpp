@@ -21,10 +21,11 @@ static void mdlInitializeSizes(SimStruct *S)
     ssSetInputPortWidth(S, 2, 1);
     ssSetInputPortDirectFeedThrough(S, 2, 1);
 
-    if (!ssSetNumOutputPorts(S,3)) return;
+    if (!ssSetNumOutputPorts(S,4)) return;
     ssSetOutputPortWidth(S, 0, 3);
-    ssSetOutputPortWidth(S, 1, 3);
+    ssSetOutputPortWidth(S, 1, 1);
     ssSetOutputPortWidth(S, 2, 2);
+    ssSetOutputPortWidth(S, 3, 2);
 
     ssSetNumSampleTimes(S, 1);
     ssSetSimStateCompliance(S, USE_DEFAULT_SIM_STATE);
@@ -53,6 +54,7 @@ static void mdlOutputs(SimStruct *S, int_T tid) {
     real_T *y1 = ssGetOutputPortRealSignal(S, 0);
     real_T *y2 = ssGetOutputPortRealSignal(S, 1);
     real_T *y3 = ssGetOutputPortRealSignal(S, 2);
+    real_T *y4 = ssGetOutputPortRealSignal(S, 3);
     double V_dc = *pdc[0];
 
     static ThetaController theta_ctrl = ThetaController(20, 15000, Tsampling);
@@ -96,11 +98,11 @@ static void mdlOutputs(SimStruct *S, int_T tid) {
     y1[0] = U.a;
     y1[1] = U.b;
     y1[2] = U.c;
-    y2[0] = i.a;
-    y2[1] = i.b;
-    y2[2] = i.c;
+    y2[0] = theta_ctrl.read();
     y3[0] = power.P;
     y3[1] = power.Q;
+    y4[0] = V.d;
+    y4[1] = V.q;
 }
 
 static void mdlTerminate(SimStruct *S) {}

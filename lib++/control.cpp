@@ -31,9 +31,9 @@ void PIController::saturate() {
     switch (this->sat.type){
         case SaturationType::circular:
             if(this->res > this->sat.max){
-                this->res = this->sat.min;
+              this->res = this->sat.min + (this->res - this->sat.max);
             }else if(this->res < this->sat.min){
-                this->res = this->sat.max;
+                this->res = this->sat.max - (this->sat.min - this->res);
             }
             break;
         case SaturationType::roof:

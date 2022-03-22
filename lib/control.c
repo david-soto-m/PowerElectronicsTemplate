@@ -4,9 +4,9 @@ void saturate(Controller *I){
     switch (I->sat.sat){
         case circular:
             if(I->res > I->sat.max){
-                I->res = I->sat.min;
+                I->res = I->sat.min + (I->res - I->sat.max);
             }else if(I->res < I->sat.min){
-                I->res = I->sat.max;
+                I->res = I->sat.max - (I->sat.min - I->res );
             }
             break;
         case roof:

@@ -132,9 +132,9 @@ Park Park::operator-(const Park &a){
 ThetaController::ThetaController(float Kp, float Ki, float T_samp) {
     const double PI = 3.141592;
     SatParam it = SatParam(
-        SaturationType::none,
-        PI,
-        -PI
+        SaturationType::circular,
+        2 * PI,
+        0
     );
     this->theta = Integrator(T_samp, it);
     this->ang_vel = PIController(Kp, Ki, T_samp);
