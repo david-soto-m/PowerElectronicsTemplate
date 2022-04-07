@@ -1,5 +1,5 @@
 classdef plot_class
-    % Auto plotting class requires data structrue as 
+    % Auto plotting class requires data structrue as
     %{struct_with_time, "plot_title", [Ylabel, Xlabel], [[start]?, periods, frec], ["Legends"];}
     properties
         box
@@ -11,7 +11,7 @@ classdef plot_class
         tick_size
         out_time_except
         figdir
-        dir_div 
+        dir_div
         ax_fontsize
     end
     methods
@@ -96,7 +96,7 @@ classdef plot_class
                 indexes = (data.time >= min_time) & data.time <= last;
             elseif length(sel) == 3
                 time_per = sort([sel(1) + sel(2)/sel(3),sel(1)]);
-                if time_per(1)<data.time(1) || time_per(2)>last 
+                if time_per(1)<data.time(1) || time_per(2)>last
                     throw(self.out_time_except)
                 end
                 indexes = (data.time<= time_per(2)) & data.time >= time_per(1);
@@ -126,6 +126,14 @@ classdef plot_class
                 ax = nexttile(tiles);
                 plt = self.plot_auto(ax,data);
             end
+            name_split = strsplit(save_name, self.dir_div);
+            l = length(name_split);
+            if l>1
+                for i=1:l-1
+                    each = name_split{i};
+                    self.figdir = strcat(self.figdir, self.dir_div, each);
+                end
+            end
             if ~exist(self.figdir, 'dir')
                 mkdir(self.figdir)
             end
@@ -133,8 +141,9 @@ classdef plot_class
             fig.Units = 'normalized';
             fig.Position = [0, 0, 1, 1];
             pause;
-            saveas(plt,strcat(self.figdir,self.dir_div,save_name),'epsc');
-            saveas(plt,strcat(self.figdir,self.dir_div,save_name),'png');
+            save_name = strcat(self.figdir,self.dir_div,name_split{l});
+            saveas(plt,save_name,'epsc');
+            saveas(plt,save_name,'png');
         end
     end
 end
